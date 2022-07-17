@@ -26,7 +26,7 @@ from goecharger import GoeCharger
 
 froniusHostname = "fronius"
 chargerHostname = "192.168.68.128"
-sleepInterval = 300
+sleepInterval = 180
 
 
 def getData(froniusHostname,dataRequest):
@@ -134,7 +134,10 @@ def TestPowerFlowRealtimeData():
         
 def main():
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-    print(str(now) + ' Starting Up.')
+    logging.basicConfig(filename="smart_charger.log", level=logging.INFO, format="%(asctime)s %(message)s")
+
+#    print(str(now) + ' Starting Up.')
+    logging.info('Starting Up.')
 
     while True:
         try:
@@ -145,8 +148,8 @@ def main():
             chargerStatus = charger.requestStatus()            
 
             currentCurrent = int(chargerStatus['charger_max_current'])
-            print(str(now) + ' Charger max current: '+str(currentCurrent) + 'A.')
-
+#            print(str(now) + ' Charger max current: '+str(currentCurrent) + 'A.')
+            logging.info ('Charger max current is: '+str(currentCurrent) + 'A.')
             car_status = chargerStatus['car_status']
             vehicle_connected = 'False'
             if car_status == 'charging finished, vehicle still connected': vehicle_connected = 'True'
@@ -156,85 +159,97 @@ def main():
             if car_status == 'charging': vehicle_charging = 'True'       
 
             if vehicle_connected == 'True':
-                print(str(now) + ' Vehicle Connected.')
-
+#                print(str(now) + ' Vehicle Connected.')
+                logging.info('Vehicle Connected.')
+                
                 Site = PowerFlowRealtimeData(GetPowerFlowRealtimeData())
                 power_from_sun=int(Site[0]['P_PV'])
-                print('Power from sun is '+ str(power_from_sun) + 'W')
+#                print('Power from sun is '+ str(power_from_sun) + 'W')
+                logging.info ('Power from sun is now: '+ str(power_from_sun) + 'W')
 
                 if power_from_sun <= 2800:
                     if vehicle_charging == 'True':
-                        print ('Should not charge now as power from sun is too low. Vehicle charging. Stopping charging.')
+#                        print ('Should not charge now as power from sun is too low. Vehicle charging. Stopping charging.')
+                        logging.info ('Should not charge now as power from sun is too low. Vehicle charging. Stopping charging.')
                         result = charger.setAllowCharging(0)   
                         result = charger.setMaxCurrent(6)
                         currentCurrent = 6
                     elif vehicle_charging == 'False':
-                        print ('Should not charge now as power from sun is too low. Vehicle not charging, nothing to do.')
-                 
+#                        print ('Should not charge now as power from sun is too low. Vehicle not charging, nothing to do.')
+                        logging.info('Should not charge now as power from sun is too low. Vehicle not charging, nothing to do.')
+
                 if power_from_sun > 2800 and power_from_sun <= 3200:
                     if currentCurrent != 6:
-                        print ('Setting charger to 6A')
+#                        print ('Setting charger to 6A')
+                        logging.info('Setting charger to 6A')
                         currentCurrent = 6
                         result = charger.setMaxCurrent(6)
 
                     if vehicle_charging == 'False':
-                        print ('Starting Charging')
+#                        print ('Starting Charging')
+                        logging.info('Starting Charging')
                         result = charger.setAllowCharging(1)
 
                 if power_from_sun > 3200 and power_from_sun <= 3700:
                     if currentCurrent != 7:
-                        print ('Setting charger to 7A')
+#                        print ('Setting charger to 7A')
+                        logging.info ('Setting charger to 7A')
                         currentCurrent = 7
                         result = charger.setMaxCurrent(7)
 
                     if vehicle_charging == 'False':
-                        #need to start charging
-                        print ('Starting Charging')
+#                        print ('Starting Charging')
+                        logging.info('Starting Charging')
                         result = charger.setAllowCharging(1)
 
                 if power_from_sun > 3700 and power_from_sun <= 4100:
                     if currentCurrent != 8:
-                        print ('Setting charger to 8A')
+#                        print ('Setting charger to 8A')
+                        logging.info ('Setting charger to 8A')
                         currentCurrent = 8
                         result = charger.setMaxCurrent(8)
 
                     if vehicle_charging == 'False':
-                        #need to start charging
-                        print ('Starting Charging')
+#                        print ('Starting Charging')
+                        logging.info('Starting Charging')
                         result = charger.setAllowCharging(1)
 
                 if power_from_sun > 4100 and power_from_sun <= 4600:
                     if currentCurrent != 9:
-                        print ('Setting charger to 9A')
+#                        print ('Setting charger to 9A')
+                        logging.info ('Setting charger to 9A')
                         currentCurrent = 9                    
                         result = charger.setMaxCurrent(9)
 
                     if vehicle_charging == 'False':
-                        #need to start charging
-                        print ('Starting Charging')
+#                        print ('Starting Charging')
+                        logging.info('Starting Charging')
                         result = charger.setAllowCharging(1)
   
                 if power_from_sun > 4600:
                     if currentCurrent != 10:
-                        print ('Setting charger to 10A')
+#                        print ('Setting charger to 10A')
+                        logging.info ('Setting charger to 10A')
                         currentCurrent = 10
                         result = charger.setMaxCurrent(10)
 
                     if vehicle_charging == 'False':
-                        #need to start charging
-                        print ('Starting Charging')
+#                        print ('Starting Charging')
+                        logging.info('Starting Charging')
                         result = charger.setAllowCharging(1)
                 
                 time.sleep(sleepInterval)
  
             if vehicle_connected == 'False':
-                print(str(now) + ' Vehicle Connected : '+str(vehicle_connected) + '. Nothing to do.')
+#                print(str(now) + ' Vehicle Connected : '+str(vehicle_connected) + '. Nothing to do.')
+                logging.info ('Vehicle Connected : ' + str(vehicle_connected) + '. Nothing to do.')
                 time.sleep(sleepInterval)
 
 
         except:
             time.sleep(sleepInterval)
             print("exception. sleeping 1 min.")
+            logging.error ('exception. sleeping 1 min.')
 
 
 if __name__ == "__main__":
