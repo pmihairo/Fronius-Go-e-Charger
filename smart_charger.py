@@ -5,6 +5,8 @@ import pandas as pd
 import logging
 from datetime import datetime
 from goecharger import GoeCharger
+from systemd import journal
+
 
 
 # smart-charger.py
@@ -161,6 +163,11 @@ def main():
             if vehicle_connected == 'True':
 #                print(str(now) + ' Vehicle Connected.')
                 logging.info('Vehicle Connected.')
+                journal.write('Vehicle Connected.')
+
+            if vehicle_charging == 'True':
+                logging.info('Vehicle Charging.')
+                journal.write('Vehicle Charging.')          
                 
                 Site = PowerFlowRealtimeData(GetPowerFlowRealtimeData())
                 power_from_sun=int(Site[0]['P_PV'])
