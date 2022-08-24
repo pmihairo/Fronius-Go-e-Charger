@@ -2,6 +2,8 @@ import requests
 import pprint
 import time
 import logging
+import json
+import paho.mqtt.client as mqtt_client
 from datetime import datetime
 from goecharger import GoeCharger
 
@@ -19,7 +21,61 @@ from goecharger import GoeCharger
 
 froniusHostname = "fronius"
 chargerHostname = "192.168.68.128"
+MQTTBroker = 'homeassistant'
 sleepInterval = 180
+chargerStatusFromMQTT = ""
+chargerSmartFromMQTT = ""
+MQTTBrokerPort = 1883
+MQTTTopic = [("/charger/status",1),("/charger/smart",1)]
+MQTTusername = 'mqtt'
+MQTTpassword = 'pasw'
+
+
+
+def connect_mqtt() -> mqtt_client:
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print("Failed to connect, return code %d\n", rc)
+
+    def on_message(client, userdata, message):
+        data = message.payload
+        receive = data.decode("utf-8")
+        m_decode = json.loads(receive)
+        topic = message.topic
+        if topic == "/charger/status" and str(m_decode) == "{'state': 'OFF'}":
+            chargerStatusFromMQTT = "OFF"
+            print('charger status' + str(chargerStatusFromMQTT))
+
+        if topic == "/charger/status" and str(m_decode) == "{'state': 'ON'}":
+            chargerStatusFromMQTT = "ON"
+            print('charger status' + str(chargerStatusFromMQTT))
+
+        if topic == "/charger/smart" and str(m_decode) == "{'state': 'OFF'}":
+            chargerSmartFromMQTT = "OFF"
+            print('smart status' + str(chargerSmartFromMQTT))
+
+        if topic == "/charger/status" and str(m_decode) == "{'state': 'ON'}":
+            chargerSmartFromMQTT = "ON"
+            print('smart status' + str(chargerSmartFromMQTT))
+
+
+#        print("received message: " + str(m_decode) + " from topic: " + topic)
+
+            
+    client = mqtt_client.Client("homeserver")
+    client.username_pw_set(MQTTusername, MQTTpassword)
+    client.on_connect = on_connect
+    client.connect(MQTTBroker, MQTTBrokerPort)
+    client.loop_start()
+    client.subscribe(MQTTTopic)
+    client.on_message = on_message 
+    time.sleep(3)
+    client.loop_stop()
+
+
+    return client 
 
 
 def getData(froniusHostname, dataRequest):
@@ -124,6 +180,7 @@ def TestPowerFlowRealtimeData():
     time.sleep(3)
 
 
+
 def main():
     now = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
     logging.basicConfig(filename="smart_charger.log", level=logging.INFO, format="%(asctime)s %(message)s")
@@ -225,12 +282,48 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 4600:
+            if power_from_sun > 4600 and power_from_sun <= 5100:
                 if currentCurrent != 10:
                     print('Setting charger to 10A')
                     logging.info('Setting charger to 10A')
                     currentCurrent = 10
                     result = charger.setMaxCurrent(10)
+
+                if vehicle_charging == 'False':
+                    print('Starting Charging')
+                    logging.info('Starting Charging')
+                    result = charger.setAllowCharging(1)
+
+            if power_from_sun > 5100 and power_from_sun <= 5500:
+                if currentCurrent != 11:
+                    print('Setting charger to 11A')
+                    logging.info('Setting charger to 11A')
+                    currentCurrent = 11
+                    result = charger.setMaxCurrent(11)
+
+                if vehicle_charging == 'False':
+                    print('Starting Charging')
+                    logging.info('Starting Charging')
+                    result = charger.setAllowCharging(1)
+
+            if power_from_sun > 5500 and power_from_sun <= 6000:
+                if currentCurrent != 12:
+                    print('Setting charger to 12A')
+                    logging.info('Setting charger to 12A')
+                    currentCurrent = 12
+                    result = charger.setMaxCurrent(12)
+
+                if vehicle_charging == 'False':
+                    print('Starting Charging')
+                    logging.info('Starting Charging')
+                    result = charger.setAllowCharging(1)
+
+            if power_from_sun > 6000:
+                if currentCurrent != 13:
+                    print('Setting charger to 13A')
+                    logging.info('Setting charger to 13A')
+                    currentCurrent = 13
+                    result = charger.setMaxCurrent(13)
 
                 if vehicle_charging == 'False':
                     print('Starting Charging')
@@ -244,11 +337,12 @@ def main():
                 logging.info('Vehicle Connected : ' + str(vehicle_connected) + '. Nothing to do.')
                 time.sleep(sleepInterval)
         except:
+            logging.error('exception. sleeping 10 min.', exc_info=True)
             time.sleep(sleepInterval)
-            logging.info('exception. sleeping 1 min.')
 
 
 if __name__ == "__main__":
+    client = connect_mqtt()
     main()
 #    TestChargerStatus()
 #    TestPowerFlowRealtimeData()
