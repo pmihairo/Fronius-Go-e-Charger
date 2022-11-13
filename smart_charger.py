@@ -22,7 +22,7 @@ from goecharger import GoeCharger
 # tested with Fronius GEN24 and Go-e Charger hardware version 3, fw version 053.3
 
 # added single phase mode to take advantage of lower power generation during the winter.
-# to use this, set single phase mode=true. 
+# to use this, set single phase mode=true and manually set single phase mode in Go-E charger app.
 
 # refactored power levels calculation. Now we start charging when there is enough power for the number pf phases +200w
 
@@ -229,15 +229,17 @@ def main():
 
             if vehicle_connected == 'False':
                 print(str(now) + ' Vehicle NOT Connected.')
+                logging.info(str(now) + ' Vehicle NOT Connected.')
 
             Site = PowerFlowRealtimeData(GetPowerFlowRealtimeData())
             power_from_sun = int(Site[0]['P_PV'])
             print('Power from sun is ' + str(power_from_sun) + 'W')
+            logging.info('Power from sun is now: ' + str(power_from_sun) + 'W')
+
             power_grid = int(Site[0]['P_Grid'])
             print('Power grid ' + str(power_grid) + 'W')
-
-            logging.info('Power from sun is now: ' + str(power_from_sun) + 'W')
             logging.info('Power grid is now: ' + str(power_grid) + 'W')
+
 
             if power_from_sun <= 1700:
                 if Single_Phase_Mode == 'False':
@@ -345,20 +347,25 @@ def main():
                     allowCharging = 1 
             
             print('Setting charger to ' + str(currentCurrent) + 'A. Single_Phase_Mode = ' + str(Single_Phase_Mode))
+            logging.info('Setting charger to ' + str(currentCurrent) + 'A. Single_Phase_Mode = ' + str(Single_Phase_Mode))
             result = charger.setMaxCurrent(int(currentCurrent))       
     
             if allowCharging == 1:
                 if vehicle_charging == 'False':
                     print('Vehicle not charging. Starting Charging.')
+                    logging.info('Vehicle not charging. Starting Charging.')
                     result = charger.setAllowCharging(1)
                 elif vehicle_charging == 'True':
                     print('Vehicle Charging alrady. Nothing to do.')
+                    logging.info('Vehicle Charging alrady. Nothing to do.')
 
             if allowCharging == 0:
                 if vehicle_charging == 'False':
                     print('Vehicle Charging alrady. Nothing to do.')
+                    logging.info('Vehicle Charging alrady. Nothing to do.')
                 elif vehicle_charging == 'True':
                     print('Vehicle Charging alrady. Stopping Charging')
+                    logging.info('Vehicle Charging alrady. Stopping Charging')
                     result = charger.setAllowCharging(0)
 
             time.sleep(sleepInterval)
