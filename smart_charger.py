@@ -7,6 +7,8 @@ import paho.mqtt.client as mqtt_client
 from datetime import datetime
 from goecharger import GoeCharger
 
+
+
 # smart-charger.py
 # Integrates go-e Charger with Fronius. 
 # relies on goecharger module https://pypi.org/project/goecharger/
@@ -19,6 +21,13 @@ from goecharger import GoeCharger
 
 # tested with Fronius GEN24 and Go-e Charger hardware version 3, fw version 053.3
 
+# added single phase mode to take advantage of lower power generation during the winter.
+# to use this, set single phase mode=true. 
+
+# refactored power levels calculation. Now we start charging when there is enough power for the number pf phases +200w
+
+
+
 froniusHostname = "fronius"
 chargerHostname = "192.168.68.128"
 MQTTBroker = 'homeassistant'
@@ -30,7 +39,7 @@ MQTTTopic = [("/charger/status",1),("/charger/smart",1)]
 MQTTusername = 'mqtt'
 MQTTpassword = 'pasw'
 
-
+Single_Phase_Mode = 'True'
 
 def connect_mqtt() -> mqtt_client:
     def on_connect(client, userdata, flags, rc):
@@ -218,6 +227,9 @@ def main():
                 if vehicle_charging == 'True':
                     logging.info('Vehicle Charging.')
 
+            if vehicle_connected == 'False':
+                print(str(now) + ' Vehicle NOT Connected.')
+
             Site = PowerFlowRealtimeData(GetPowerFlowRealtimeData())
             power_from_sun = int(Site[0]['P_PV'])
             print('Power from sun is ' + str(power_from_sun) + 'W')
@@ -227,112 +239,127 @@ def main():
             logging.info('Power from sun is now: ' + str(power_from_sun) + 'W')
             logging.info('Power grid is now: ' + str(power_grid) + 'W')
 
-            if power_from_sun <= 3000:
-                if vehicle_charging == 'True':
-                    print('Not enough power to charge. Stopping charging.')
-                    logging.info('Not enough power to charge. Stopping charging.')
-                    result = charger.setAllowCharging(0)
-                    result = charger.setMaxCurrent(6)
+            if power_from_sun <= 1700:
+                if Single_Phase_Mode == 'False':
                     currentCurrent = 6
-                elif vehicle_charging == 'False':
-                    print('Vehicle not charging, nothing to do.')
-                    logging.info('Vehicle not charging, nothing to do.')
-
-            if power_from_sun > 3000 and power_from_sun <= 3500:
-                if currentCurrent != 6:
-                    print('Setting charger to 6A')
-                    logging.info('Setting charger to 6A')
+                    allowCharging = 0
+                elif Single_Phase_Mode == 'True':
                     currentCurrent = 6
-                    result = charger.setMaxCurrent(6)
+                    allowCharging = 0
 
-                if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
+            if power_from_sun > 1700 and power_from_sun <=1900:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 6
+                    allowCharging = 0
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 6
+                    allowCharging = 1
 
-            if power_from_sun > 3500 and power_from_sun <= 4000:
-                if currentCurrent != 7:
-                    print('Setting charger to 7A')
-                    logging.info('Setting charger to 7A')
+            if power_from_sun > 1900 and power_from_sun <=2140:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 6
+                    allowCharging = 0
+                elif Single_Phase_Mode == 'True':
                     currentCurrent = 7
-                    result = charger.setMaxCurrent(7)
+                    allowCharging = 1
 
-                if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
-
-            if power_from_sun > 4000 and power_from_sun <= 4500:
-                if currentCurrent != 8:
-                    print('Setting charger to 8A')
-                    logging.info('Setting charger to 8A')
+            if power_from_sun > 2140 and power_from_sun <=2380:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 6
+                    allowCharging = 0
+                elif Single_Phase_Mode == 'True':
                     currentCurrent = 8
-                    result = charger.setMaxCurrent(8)
+                    allowCharging = 1
 
-                if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
-
-            if power_from_sun > 4500 and power_from_sun <= 5100:
-                if currentCurrent != 9:
-                    print('Setting charger to 9A')
-                    logging.info('Setting charger to 9A')
+            if power_from_sun > 2380 and power_from_sun <=2620:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 6
+                    allowCharging = 0
+                elif Single_Phase_Mode == 'True':
                     currentCurrent = 9
-                    result = charger.setMaxCurrent(9)
+                    allowCharging = 1
 
-                if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
 
-            if power_from_sun > 5100 and power_from_sun <= 5600:
-                if currentCurrent != 10:
-                    print('Setting charger to 10A')
-                    logging.info('Setting charger to 10A')
+            if power_from_sun > 2620 and power_from_sun <=3000:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 6
+                    allowCharging = 0
+                elif Single_Phase_Mode == 'True':
                     currentCurrent = 10
-                    result = charger.setMaxCurrent(10)
+                    allowCharging = 1
 
-                if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
-
-            if power_from_sun > 5600 and power_from_sun <= 6100:
-                if currentCurrent != 11:
-                    print('Setting charger to 11A')
-                    logging.info('Setting charger to 11A')
-                    currentCurrent = 11
-                    result = charger.setMaxCurrent(11)
-
-                if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
-
-            if power_from_sun > 6100 and power_from_sun <= 6500:
-                if currentCurrent != 12:
-                    print('Setting charger to 12A')
-                    logging.info('Setting charger to 12A')
+            if power_from_sun > 3000 and power_from_sun <=3500:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 6
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
                     currentCurrent = 12
-                    result = charger.setMaxCurrent(12)
+                    allowCharging = 1
 
+            if power_from_sun > 3500 and power_from_sun <=4000:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 7
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 14
+                    allowCharging = 1
+
+            if power_from_sun > 4000 and power_from_sun <=4500:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 8
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 16
+                    allowCharging = 1
+
+            if power_from_sun > 4500 and power_from_sun <=5000:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 9
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 16
+                    allowCharging = 1 
+
+            if power_from_sun > 5000 and power_from_sun <=5500:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 10
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 16
+                    allowCharging = 1 
+
+            if power_from_sun > 5500 and power_from_sun <=6000:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 11
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 16
+                    allowCharging = 1 
+
+            if power_from_sun > 6000:
+                if Single_Phase_Mode == 'False':
+                    currentCurrent = 12
+                    allowCharging = 1
+                elif Single_Phase_Mode == 'True':
+                    currentCurrent = 16
+                    allowCharging = 1 
+            
+            print('Setting charger to ' + str(currentCurrent) + 'A. Single_Phase_Mode = ' + str(Single_Phase_Mode))
+            result = charger.setMaxCurrent(int(currentCurrent))       
+    
+            if allowCharging == 1:
                 if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
+                    print('Vehicle not charging. Starting Charging.')
                     result = charger.setAllowCharging(1)
+                elif vehicle_charging == 'True':
+                    print('Vehicle Charging alrady. Nothing to do.')
 
-            if power_from_sun > 6500:
-                if currentCurrent != 13:
-                    print('Setting charger to 13A')
-                    logging.info('Setting charger to 13A')
-                    currentCurrent = 13
-                    result = charger.setMaxCurrent(13)
-
+            if allowCharging == 0:
                 if vehicle_charging == 'False':
-                    print('Starting Charging')
-                    logging.info('Starting Charging')
-                    result = charger.setAllowCharging(1)
+                    print('Vehicle Charging alrady. Nothing to do.')
+                elif vehicle_charging == 'True':
+                    print('Vehicle Charging alrady. Stopping Charging')
+                    result = charger.setAllowCharging(0)
 
             time.sleep(sleepInterval)
 
