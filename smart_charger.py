@@ -221,9 +221,13 @@ def main():
             Site = PowerFlowRealtimeData(GetPowerFlowRealtimeData())
             power_from_sun = int(Site[0]['P_PV'])
             print('Power from sun is ' + str(power_from_sun) + 'W')
-            logging.info('Power from sun is now: ' + str(power_from_sun) + 'W')
+            power_grid = int(Site[0]['P_Grid'])
+            print('Power grid ' + str(power_grid) + 'W')
 
-            if power_from_sun <= 2800:
+            logging.info('Power from sun is now: ' + str(power_from_sun) + 'W')
+            logging.info('Power grid is now: ' + str(power_grid) + 'W')
+
+            if power_from_sun <= 3000:
                 if vehicle_charging == 'True':
                     print('Not enough power to charge. Stopping charging.')
                     logging.info('Not enough power to charge. Stopping charging.')
@@ -234,7 +238,7 @@ def main():
                     print('Vehicle not charging, nothing to do.')
                     logging.info('Vehicle not charging, nothing to do.')
 
-            if power_from_sun > 2800 and power_from_sun <= 3200:
+            if power_from_sun > 3000 and power_from_sun <= 3500:
                 if currentCurrent != 6:
                     print('Setting charger to 6A')
                     logging.info('Setting charger to 6A')
@@ -246,7 +250,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 3200 and power_from_sun <= 3700:
+            if power_from_sun > 3500 and power_from_sun <= 4000:
                 if currentCurrent != 7:
                     print('Setting charger to 7A')
                     logging.info('Setting charger to 7A')
@@ -258,7 +262,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 3700 and power_from_sun <= 4100:
+            if power_from_sun > 4000 and power_from_sun <= 4500:
                 if currentCurrent != 8:
                     print('Setting charger to 8A')
                     logging.info('Setting charger to 8A')
@@ -270,7 +274,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 4100 and power_from_sun <= 4600:
+            if power_from_sun > 4500 and power_from_sun <= 5100:
                 if currentCurrent != 9:
                     print('Setting charger to 9A')
                     logging.info('Setting charger to 9A')
@@ -282,7 +286,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 4600 and power_from_sun <= 5100:
+            if power_from_sun > 5100 and power_from_sun <= 5600:
                 if currentCurrent != 10:
                     print('Setting charger to 10A')
                     logging.info('Setting charger to 10A')
@@ -294,7 +298,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 5100 and power_from_sun <= 5500:
+            if power_from_sun > 5600 and power_from_sun <= 6100:
                 if currentCurrent != 11:
                     print('Setting charger to 11A')
                     logging.info('Setting charger to 11A')
@@ -306,7 +310,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 5500 and power_from_sun <= 6000:
+            if power_from_sun > 6100 and power_from_sun <= 6500:
                 if currentCurrent != 12:
                     print('Setting charger to 12A')
                     logging.info('Setting charger to 12A')
@@ -318,7 +322,7 @@ def main():
                     logging.info('Starting Charging')
                     result = charger.setAllowCharging(1)
 
-            if power_from_sun > 6000:
+            if power_from_sun > 6500:
                 if currentCurrent != 13:
                     print('Setting charger to 13A')
                     logging.info('Setting charger to 13A')
